@@ -36,6 +36,10 @@ module Outsourced
       Outsourced.client_application
     end
 
+    def current_token
+      tokens.first
+    end
+
     def reset_tokens!
       Outsourced::Oauth::AccessToken.transaction do
         clear_tokens!
@@ -49,7 +53,14 @@ module Outsourced
     end
 
     def to_yaml
-      #TODO
+      {
+        :name => name,
+        :token => current_token.token,
+        :secret => current_token.secret,
+        :client_key => client_application.key,
+        :client_secret => client_application.secret,
+        :url => Outsourced.url
+      }.to_yaml
     end
 
     def works_for?(queue)

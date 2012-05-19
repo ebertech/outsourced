@@ -14,6 +14,10 @@ module Outsourced
 
     alias_method :outsource, :enqueue
 
+    def url
+      client_application.url
+    end
+
     def create_client_application!(url)
       Outsourced::Oauth::ClientApplication.create!(:name => ApplicationName, :url => url)
     end
