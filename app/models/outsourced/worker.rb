@@ -7,10 +7,28 @@ module Outsourced
 
     validates :name, :uniqueness => true, :presence => true
 
-    #TODO state_machine
+    state_machine :initial => :active do
+
+      event :lock_out do
+        transition any => :locked
+      end
+
+      event :reinstate do
+        transition :locked => :active
+      end
+
+    end
+
+    def reset!
+      
+    end
 
     def reserve_next_job!
       #TODO query
+    end
+
+    def to_yaml
+      #TODO
     end
 
     def works_for?(queue)

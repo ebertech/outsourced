@@ -3,8 +3,12 @@ class Outsourced::Commands::Worker::Lock < Outsourced::Commands::Worker::Command
 
   def execute
     with_worker(worker_name) do |worker|
-      worker.lock!
-      say "Locked #{worker.name}"
+      if worker.can_lock_out?
+        worker.lock_out
+        say "Locked #{worker.name}"
+      else
+        say "Can't lock #{worker.name}'"
+      end
     end
   end
 end
