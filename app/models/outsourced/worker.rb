@@ -5,6 +5,7 @@ module Outsourced
     after_create :reset_tokens!
 
     has_many :outsourced_jobs, :class_name => "Outsourced::Job", :foreign_key => "outsourced_worker_id"
+
     has_and_belongs_to_many :outsourced_queues, :class_name => "Outsourced::Queue", :join_table => "outsourced_queues_outsourced_workers", :foreign_key => "outsourced_worker_id", :association_foreign_key => "outsourced_queue_id"
 
     has_many :tokens, :class_name => "Outsourced::Oauth::OauthToken", :order => "authorized_at desc", :include => [:client_application], :as => :user, :dependent => :destroy
@@ -47,9 +48,20 @@ module Outsourced
       end
     end
 
+    def available_jobs
+      Outsourced::Job.unassigned.for_queues(outsourced_queues)
+    end
+
     def reserve_next_job!
-      return nil unless is_active?
-      #TODO query
+      return nil unless active?
+      assigned_job = available_jobs.detect do |job|
+        job.assign_to!(self)
+      end
+
+      return nil unless assigned_job
+      assigned_job.begin_work
+
+      assigned_job
     end
 
     def to_yaml

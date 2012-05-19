@@ -7,7 +7,10 @@ module Outsourced
     has_many :outsourced_jobs, :class_name => "Outsourced::Job", :foreign_key => "outsourced_queue_id"
     has_and_belongs_to_many :outsourced_workers, :class_name => "Outsourced::Worker", :join_table => "outsourced_queues_outsourced_workers", :association_foreign_key => "outsourced_worker_id", :foreign_key => "outsourced_queue_id"
 
-    #TODO check for capacity
+    def enqueue(*args)
+      raise "At capacity" if !capacity.zero? && outsourced_jobs.in_progress.count >= capacity
+      outsourced_jobs.create(:outsourced_queue => self)
+    end
 
     validates :capacity, :numericality => {:gte => 0}
     validates :name, :uniqueness => true, :presence => true
