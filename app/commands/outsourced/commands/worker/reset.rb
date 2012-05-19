@@ -3,7 +3,7 @@ class Outsourced::Commands::Worker::Reset < Outsourced::Commands::Worker::Comman
 
   def execute
     with_worker(worker_name) do |worker|
-      worker.reset!
+      worker.reset_tokens!
       say "Reset #{worker.name}"
     end
   end

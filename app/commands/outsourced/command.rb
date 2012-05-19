@@ -20,5 +20,12 @@ module Outsourced
       subcommand "fire", "unassign a worker from a queue", ::Outsourced::Commands::Queue::Fire
       subcommand "stats", "show information about a queue", ::Outsourced::Commands::Queue::Stats
     end
+
+    subcommand "init", "initialize the application" do
+      parameter "URL", "the url to use for client applications"
+      def execute
+        Outsourced.create_client_application!(url)
+      end
+    end
   end
 end

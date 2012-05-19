@@ -15,7 +15,7 @@ class CreateOauthTables < ActiveRecord::Migration
 
     create_table :outsourced_oauth_tokens do |t|
       t.references :user, :polymorphic => true
-      t.string :type, :limit => 20
+      t.string :type
       t.integer :client_application_id
       t.string :token, :limit => 40
       t.string :secret, :limit => 40
