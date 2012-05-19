@@ -7,8 +7,7 @@ module Outsourced
     has_many :outsourced_jobs, :class_name => "Outsourced::Job", :foreign_key => "outsourced_worker_id"
     has_and_belongs_to_many :outsourced_queues, :class_name => "Outsourced::Queue", :join_table => "outsourced_queues_outsourced_workers", :foreign_key => "outsourced_worker_id", :association_foreign_key => "outsourced_queue_id"
 
-    has_many :client_applications, :as => :user, :class_name => "Outsourced::Oauth::ClientApplication"
-    has_many :tokens, :class_name => "Outsourced::Oauth::OauthToken", :order => "authorized_at desc", :include => [:client_application], :as => :user
+    has_many :tokens, :class_name => "Outsourced::Oauth::OauthToken", :order => "authorized_at desc", :include => [:client_application], :as => :user, :dependent => :destroy
 
     validates :name, :uniqueness => true, :presence => true
 
@@ -30,6 +29,7 @@ module Outsourced
 
     def clear_tokens!
       tokens.clear
+      save
     end
 
     def client_application
