@@ -18,23 +18,23 @@ class OutsourcedGenerator < Rails::Generators::Base
   end
 
   def generate_outsourced_jobs_migration
-    #migration_template "create_outsourced_jobs.rb", "db/migrate/create_outsourced_jobs.rb"
+    migration_template "create_outsourced_jobs.rb", "db/migrate/create_outsourced_jobs.rb"
   end
 
   def generate_outsourced_workers_migration
-    #migration_template "create_outsourced_workers.rb", "db/migrate/create_outsourced_workers.rb"
+    migration_template "create_outsourced_workers.rb", "db/migrate/create_outsourced_workers.rb"
   end
 
   def generate_outsourced_queues_migration
-    #migration_template "create_outsourced_queues.rb", "db/migrate/create_outsourced_queues.rb"
+    migration_template "create_outsourced_queues.rb", "db/migrate/create_outsourced_queues.rb"
   end
 
   def generate_outsourced_queues_outsourced_workers_migration
-    #migration_template "create_outsourced_queues_outsourced_workers.rb", "db/migrate/create_outsourced_queues_outsourced_workers.rb"
+    migration_template "create_outsourced_queues_outsourced_workers.rb", "db/migrate/create_outsourced_queues_outsourced_workers.rb"
   end
 
   def generate_oauth_migration
-    #migration_template "create_oauth_tables.rb", "db/migrate/create_oauth_tables.rb"
+    migration_template "create_oauth_tables.rb", "db/migrate/create_oauth_tables.rb"
   end
 
   def copy_script
