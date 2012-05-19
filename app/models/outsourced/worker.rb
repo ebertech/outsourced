@@ -14,7 +14,7 @@ module Outsourced
     end
 
     def works_for?(queue)
-      queues.include?(queue)
+      outsourced_queues.include?(queue)
     end
   end
 end
