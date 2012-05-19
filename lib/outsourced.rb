@@ -29,5 +29,5 @@ module Outsourced
     end
   end
 end
-
+require 'outsourced/application_controller_methods.rb'
 require 'outsourced/engine.rb'
