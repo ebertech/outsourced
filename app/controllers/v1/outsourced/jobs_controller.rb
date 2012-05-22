@@ -4,7 +4,7 @@ module V1
       include ::Outsourced::ApplicationControllerMethods
       oauthenticate :interactive => false
       before_filter :ensure_valid_worker
-      before_filter :find_job, :only => [:put, :delete, :attachment]
+      before_filter :find_job, :only => [:update, :destroy, :attachment, :show]
 
       def next
         @job = @worker.reserve_next_job!
@@ -17,21 +17,34 @@ module V1
         end
       end
 
-      def attachment
-        #TODO send file
+      def show
+        if @job.payload? && @job.payload.exists?
+          send_file @job.payload.path, :filename => File.basename(@job.payload.path), :content_type => @job.payload.content_type
+        else
+          head :not_found
+        end
       end
 
       def create
-        #TODO create a new job
-        #TODO handle attachment
+
+            @job = ::Outsourced::Job.new(params[:job])
+            if @job.save!
+              render :text => @job.to_json
+            else
+              raise @job.errors.full_messages.join(", ")
+            end
+
+
       end
 
       def update
-        #TODO complete
+        @job.update_attributes(params[:job])
+        head :ok
       end
 
       def destroy
-        #TODO fail
+        @job.finished!
+        head :ok
       end
 
       protected
@@ -49,7 +62,11 @@ module V1
       end
 
       def find_job
-        @worker.outsourced_jobs.find(params[:id])
+        @job = @worker.outsourced_jobs.find(params[:id])
+        unless @job
+          head(:not_found)
+          return false
+        end
       end
     end
   end

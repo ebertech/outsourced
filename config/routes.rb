@@ -4,9 +4,6 @@ Outsourced::Engine.routes.draw do
       collection do
         put :next
       end
-      member do
-        get :attachment
-      end
     end
   end
 end

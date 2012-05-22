@@ -10,7 +10,7 @@ class CreateOutsourcedJobs < ActiveRecord::Migration
       t.string :state
       t.datetime :expires_at
       t.references :owner, :polymorphic => true
-
+      t.text    :handler_json
       t.string :payload_file_name
       t.integer :payload_size
       t.string :payload_content_type
