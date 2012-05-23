@@ -1,3 +1,5 @@
+require 'clamp'
+
 module Outsourced
   class Command < Clamp::Command
     subcommand "worker", "manage workers" do
