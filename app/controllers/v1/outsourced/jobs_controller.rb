@@ -26,15 +26,12 @@ module V1
       end
 
       def create
-
-            @job = ::Outsourced::Job.new(params[:job])
-            if @job.save!
-              render :text => @job.to_json
-            else
-              raise @job.errors.full_messages.join(", ")
-            end
-
-
+        @job = ::Outsourced::Job.new(params[:job])
+        if @job.save!
+          render :text => @job.to_json
+        else
+          raise @job.errors.full_messages.join(", ")
+        end
       end
 
       def update

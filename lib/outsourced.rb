@@ -6,10 +6,8 @@ module Outsourced
   ApplicationName = "OutsourcedWorker"
 
   class << self
-    def enqueue(job_class, *args)
-      options = args.extract_options!
-      queue = options.delete(:queue) || Queue::DEFAULT
-      puts queue
+    def enqueue(*args)
+      Outsourced::Queue.enqueue(*args)
     end
 
     alias_method :outsource, :enqueue

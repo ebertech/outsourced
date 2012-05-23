@@ -49,7 +49,7 @@ module Outsourced
     end
 
     def available_jobs
-      Outsourced::Job.unassigned.for_queues(outsourced_queues).limit(10)
+      Outsourced::Job.ready_to_run.by_priority.for_queues(outsourced_queues).limit(10)
     end
 
     def reserve_next_job!
