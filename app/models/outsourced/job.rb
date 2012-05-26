@@ -21,15 +21,17 @@ module Outsourced
     validates :expires_at, :presence => true
     
     scope :stuck, lambda{
-      in_progress.where("outsourced_jobs.gets_stuck_at <= ?", Time.now)
+      in_progress.where(arel_table[:gets_stuck_at].lteq(Time.now))
     }
     
     scope :expired, lambda{
-      in_progress.where("outsourced_jobs.expires_at <= ?", Time.now)
+      in_progress.where(arel_table[:expires_at].lteq(Time.now))
     }
     
     scope :ready_to_run, lambda{
-      unassigned.where("outsourced_jobs.runs_at <= ?", Time.now)
+      unassigned.
+        where(arel_table[:runs_at].lteq(Time.now)).
+        where(arel_table[:expires_at].gt(Time.now))
     }
 
     scope :by_priority, order(:priority)
@@ -78,8 +80,6 @@ module Outsourced
 
     def check_for_error
       if backtrace.present? && exception.present?
-        #TODO write to transition
-        self.backtrace = self.exception = nil
         work_failed
       end
     end
@@ -126,7 +126,6 @@ module Outsourced
       after_transition :on => :work_failed do |job, transition|
         if job.repeats_after_fail_at
           time_until_next_repeat = job.repeats_after_fail_at - job.runs_at
-
           job.runs_at = job.repeats_after_fail_at
           job.repeats_after_fail_at = job.runs_at + time_until_next_repeat
           job.save
