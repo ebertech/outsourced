@@ -33,7 +33,7 @@ module Outsourced
     }
 
     scope :by_priority, order(:priority)
-    scope :in_progress, where(:state => ["unassigned", "assigned", "working", "failed"])
+    scope :in_progress, where(:state => ["unassigned", "assigned", "working"])
     scope :unassigned, where(:state => "unassigned")
     scope :for_queues, lambda { |queues|
       where(:outsourced_queue_id => queues.map(&:id))
