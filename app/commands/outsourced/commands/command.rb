@@ -8,15 +8,20 @@ class Outsourced::Commands::Command < Clamp::Command
       parameter "QUEUE_NAME", "name of the queue"
     end
   end
-  def say(message)
-    puts message
+
+  delegate :mute, :say, :say_status, :ask, :yes?, :no?, :print_table, :print_wrapped,
+           :error, :set_color, :file_collision, :to => :shell
+
+
+  def shell
+    @shell ||= Thor::Base.shell.new
   end
 
   def persist(object)
     if object.save
-      say "Created #{object.name}"
+      say_status object.class.table_name.singularize, "Created #{object.name}"
     else
-      say "Failed creating #{object.name}:"
+      say_status object.class.table_name.singularize, "Failed creating #{object.name}:", :red
       object.errors.full_messages.each do |message|
         say "  -  #{message}"
       end
@@ -25,9 +30,9 @@ class Outsourced::Commands::Command < Clamp::Command
 
   def update(object)
     if object.save
-      say "Updated #{object.name}"
+      say_status object.class.table_name.singularize, "Updated #{object.name}"
     else
-      say "Failed creating #{object.name}:"
+      say_status object.class.table_name.singularize,  "Failed creating #{object.name}:", :red
       object.errors.full_messages.each do |message|
         say "  -  #{message}"
       end
@@ -44,7 +49,7 @@ class Outsourced::Commands::Command < Clamp::Command
 
   def destroy(object)
     object.destroy
-    say "Deleted #{object.name}"
+    say_status :deleted, object.name
   end
 
   def with_queue(queue_name)
@@ -52,7 +57,7 @@ class Outsourced::Commands::Command < Clamp::Command
     if queue
       yield queue
     else
-      say "Couldn't find a queue named #{queue_name}"
+      say_status :outsourced_queue, "Couldn't find a queue named #{queue_name}", :red
     end
   end
 
@@ -61,7 +66,8 @@ class Outsourced::Commands::Command < Clamp::Command
     if worker
       yield worker
     else
-      say "Couldn't find a worker named #{worker_name}"
+      say_status :outsourced_worker, "Couldn't find a worker named #{worker_name}", :red
     end
   end
+
 end

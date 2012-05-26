@@ -23,4 +23,5 @@ Gem::Specification.new do |gem|
   gem.add_runtime_dependency "authlogic"
   gem.add_runtime_dependency "oauth"
   gem.add_runtime_dependency "oauth-plugin", "~> 0.4.0"
+  gem.add_runtime_dependency "thor"
 end

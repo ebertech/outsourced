@@ -4,7 +4,7 @@ class Outsourced::Commands::Queue::Empty < Outsourced::Commands::Queue::Command
   def execute
     with_queue(queue_name) do |queue|
       queue.empty!
-      say "Cleared out #{queue.name}"
+      say_status :outsourced_queue, "Cleared out #{queue.name}"
     end
   end
 end

@@ -5,9 +5,9 @@ class Outsourced::Commands::Worker::Unlock < Outsourced::Commands::Worker::Comma
     with_worker(worker_name) do |worker|
       if worker.can_reinstate?
         worker.reinstate!
-        say "Unlocked #{worker.name}"
+        say_status :outsourced_worker, "Unlocked #{worker.name}"
       else
-        say "Can't unlock #{worker.name}'"
+        say_status :outsourced_worker,"Can't unlock #{worker.name}", :yellow
       end
     end
   end

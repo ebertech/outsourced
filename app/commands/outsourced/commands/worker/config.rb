@@ -9,7 +9,7 @@ class Outsourced::Commands::Worker::Config < Outsourced::Commands::Worker::Comma
         file = File.expand_path(output_file.to_s)
         File.open(file, "wb") do |f|
           f.write(worker.to_yaml)
-          say "Saved configuration to: #{file}"
+          say_status :outsourced_worker, "Saved configuration to: #{file}"
         end
       else
         puts worker.to_yaml
