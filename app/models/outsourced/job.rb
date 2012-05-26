@@ -21,11 +21,11 @@ module Outsourced
     validates :expires_at, :presence => true
     
     scope :stuck, lambda{
-      in_progress.where("outsourced_jobs.expires_at <= ?", Time.now)
+      in_progress.where("outsourced_jobs.gets_stuck_at <= ?", Time.now)
     }
     
     scope :expired, lambda{
-      in_progress.where("outsourced_jobs.gets_stuck_at <= ?", Time.now)
+      in_progress.where("outsourced_jobs.expires_at <= ?", Time.now)
     }
     
     scope :ready_to_run, lambda{
