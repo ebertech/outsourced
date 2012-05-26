@@ -1,6 +1,7 @@
 require "active_support/concern"
 require 'paperclip'
 require 'state_machine'
+require 'thor'
 
 module Outsourced
   ApplicationName = "OutsourcedWorker"
