@@ -19,16 +19,16 @@ module Outsourced
     validates :handler_json, :presence => true
     validates :runs_at, :presence => true
     validates :expires_at, :presence => true
-    
-    scope :stuck, lambda{
+
+    scope :stuck, lambda {
       in_progress.where(arel_table[:gets_stuck_at].lteq(Time.now))
     }
-    
-    scope :expired, lambda{
+
+    scope :expired, lambda {
       in_progress.where(arel_table[:expires_at].lteq(Time.now))
     }
-    
-    scope :ready_to_run, lambda{
+
+    scope :ready_to_run, lambda {
       unassigned.
         where(arel_table[:runs_at].lteq(Time.now)).
         where(arel_table[:expires_at].gt(Time.now))
@@ -58,7 +58,7 @@ module Outsourced
         false
       end
     end
-    
+
     def handler_object
       #TODO
       #add some callbacks as well
@@ -96,6 +96,36 @@ module Outsourced
       !!repeats_after_complete_at
     end
 
+    def repeat_after_completion!
+      if repeats_after_fail_at
+        repeat_fail_delta = repeats_after_fail_at - runs_at
+      end
+
+      repeat_complete_delta = repeats_after_complete_at - runs_at
+      expire_delta = expires_at - runs_at
+
+      self.runs_at = repeats_after_complete_at
+      self.expires_at = self.runs_at + expire_delta
+      self.repeats_after_fail_at = self.runs_at + repeat_fail_delta if repeat_fail_delta
+
+      save!
+    end
+
+    def repeat_after_failure!
+      if repeats_after_complete_at
+        repeat_complete_delta = repeats_after_complete_at - runs_at
+      end
+
+      repeat_fail_delta = repeats_after_fail_at - runs_at
+      expire_delta = expires_at - runs_at
+
+      self.runs_at = repeats_after_fail_at
+      self.expires_at = self.runs_at + expire_delta
+      self.repeats_after_complete_at = self.runs_at + repeat_complete_delta if repeat_complete_delta
+
+      save!
+    end
+
     def handler
       ActiveSupport::JSON.decode(handler_json)
     end
@@ -109,13 +139,17 @@ module Outsourced
         transition :assigned => :working
       end
 
+      event :reset_job do
+        transition any => :unassigned
+      end
+
       event :work_failed do
         transition any => :failed, :unless => :repeats_on_fail?
         transition any => :unassigned
       end
 
-      event :reset_job do
-        transition any => :unassigned
+      after_transition :on => :work_failed do |job, transition|
+        job.repeat_after_failure! if repeats_on_fail?
       end
 
       event :finished do
@@ -123,24 +157,9 @@ module Outsourced
         transition :working => :unassigned
       end
 
-      after_transition :on => :work_failed do |job, transition|
-        if job.repeats_after_fail_at
-          time_until_next_repeat = job.repeats_after_fail_at - job.runs_at
-          job.runs_at = job.repeats_after_fail_at
-          job.repeats_after_fail_at = job.runs_at + time_until_next_repeat
-          job.save
-        end
-      end
-
       after_transition :on => :finished do |job, transition|
-        if job.repeats_after_complete_at
-          time_until_next_repeat = job.repeats_after_complete_at - job.runs_at
-          job.runs_at = job.repeats_after_complete_at
-          job.repeats_after_complete_at = job.runs_at + time_until_next_repeat
-          job.save
-        end
+        job.repeat_after_completion! if repeats_on_complete?
       end
-
     end
   end
 end
