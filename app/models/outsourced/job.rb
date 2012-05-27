@@ -116,6 +116,9 @@ module Outsourced
 
     def check_for_error
       if backtrace.present? && exception.present?
+        logger.info "Got exception: #{exception}"
+        logger.info "Backtrace: #{backtrace}"
+        self.exception = self.backtrace = nil
         work_failed
       end
     end
