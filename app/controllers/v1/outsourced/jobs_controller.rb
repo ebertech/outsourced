@@ -5,6 +5,7 @@ module V1
       oauthenticate :interactive => false
       before_filter :ensure_valid_worker
       before_filter :find_job, :only => [:update, :destroy, :attachment, :show]
+      after_filter :run_maintenance
 
       def next
         @job = @worker.reserve_next_job!
@@ -51,6 +52,10 @@ module V1
       end
 
       private
+
+      def run_maintenance
+        ::Outsourced::Maintenance.new.perform
+      end
 
       def ensure_valid_worker
         unless @worker && @worker.active?
