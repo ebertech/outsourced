@@ -34,14 +34,50 @@ module Outsourced
         where(arel_table[:expires_at].gt(Time.now))
     }
 
+    IN_PROGRESS_STATES = ["unassigned", "assigned", "working"]
+
     scope :by_priority, order(:priority)
-    scope :in_progress, where(:state => ["unassigned", "assigned", "working"])
+    scope :in_progress, where(:state => IN_PROGRESS_STATES)
+
     scope :unassigned, where(:state => "unassigned")
+
     scope :for_queues, lambda { |queues|
       where(:outsourced_queue_id => queues.map(&:id))
     }
 
     before_validation :set_defaults
+
+    validate :expires_after_runs, :gets_stuck_after_runs, :expires_after_gets_stuck, :fail_repeat_after_runs, :complete_repeat_after_runs
+
+    def expires_after_runs
+      if expires_at && runs_at && expires_at <= runs_at
+        errors.add(:expires_at, "can't be before runs_at")
+      end
+    end
+
+    def gets_stuck_after_runs
+      if gets_stuck_at && runs_at && gets_stuck_at <= runs_at
+        errors.add(:gets_stuck_at, "can't be before runs_at")
+      end
+    end
+
+    def expires_after_gets_stuck
+      if gets_stuck_at && expires_at && expires_at <= gets_stuck_at
+        errors.add(:expires_at, "can't be before gets_stuck_at")
+      end
+    end
+
+    def fail_repeat_after_runs
+      if repeats_after_fail_at && runs_at && repeats_after_fail_at <= runs_at
+        errors.add(:repeats_after_fail_at, "can't be before runs_at")
+      end
+    end
+
+    def complete_repeat_after_runs
+      if repeats_after_complete_at && runs_at && repeats_after_complete_at <= runs_at
+        errors.add(:repeats_after_complete_at, "can't be before runs_at")
+      end
+    end
 
     def set_defaults
       self.runs_at ||= Time.now
@@ -97,33 +133,41 @@ module Outsourced
     end
 
     def repeat_after_completion!
-      if repeats_after_fail_at
-        repeat_fail_delta = repeats_after_fail_at - runs_at
+      self.class.new(attributes).tap do |job|
+        if job.repeats_after_fail_at
+          repeat_fail_delta = job.repeats_after_fail_at - job.runs_at
+        end
+
+        repeat_complete_delta = job.repeats_after_complete_at - job.runs_at
+        expire_delta = job.expires_at - job.runs_at
+        job.state = "unassigned"
+
+        job.runs_at = [job.repeats_after_complete_at, Time.now].max
+        job.expires_at = job.runs_at + expire_delta
+        job.repeats_after_fail_at = job.runs_at + repeat_fail_delta if repeat_fail_delta
+        job.repeats_after_complete_at = job.runs_at + repeat_complete_delta
+
+        job.save!
       end
-
-      repeat_complete_delta = repeats_after_complete_at - runs_at
-      expire_delta = expires_at - runs_at
-
-      self.runs_at = repeats_after_complete_at
-      self.expires_at = self.runs_at + expire_delta
-      self.repeats_after_fail_at = self.runs_at + repeat_fail_delta if repeat_fail_delta
-
-      save!
     end
 
     def repeat_after_failure!
-      if repeats_after_complete_at
-        repeat_complete_delta = repeats_after_complete_at - runs_at
+      self.class.new(attributes).tap do |job|
+        if job.repeats_after_complete_at
+          repeat_complete_delta = job.repeats_after_complete_at - job.runs_at
+        end
+
+        repeat_fail_delta = job.repeats_after_fail_at - job.runs_at
+        expire_delta = job.expires_at - job.runs_at
+        job.state = "unassigned"
+
+        job.runs_at = [job.repeats_after_fail_at, Time.now].max
+        job.expires_at = job.runs_at + expire_delta
+        job.repeats_after_complete_at = job.runs_at + repeat_complete_delta if repeat_complete_delta
+        job.repeats_after_fail_at = job.runs_at + repeat_fail_delta
+
+        job.save!
       end
-
-      repeat_fail_delta = repeats_after_fail_at - runs_at
-      expire_delta = expires_at - runs_at
-
-      self.runs_at = repeats_after_fail_at
-      self.expires_at = self.runs_at + expire_delta
-      self.repeats_after_complete_at = self.runs_at + repeat_complete_delta if repeat_complete_delta
-
-      save!
     end
 
     def handler
@@ -144,21 +188,25 @@ module Outsourced
       end
 
       event :work_failed do
-        transition any => :failed, :unless => :repeats_on_fail?
-        transition any => :unassigned
+        transition any => :failed
       end
 
-      after_transition :on => :work_failed do |job, transition|
-        job.repeat_after_failure! if repeats_on_fail?
+      event :work_expired do
+        transition IN_PROGRESS_STATES.map(&:to_sym) => :expired
+        transition :unassigned => :expired
       end
 
       event :finished do
-        transition :working => :completed, :unless => :repeats_on_complete?
-        transition :working => :unassigned
+        transition :working => :completed
+      end
+
+
+      after_transition :on => [:work_failed, :work_expired] do |job, transition|
+        job.repeat_after_failure! if job.repeats_on_fail?
       end
 
       after_transition :on => :finished do |job, transition|
-        job.repeat_after_completion! if repeats_on_complete?
+        job.repeat_after_completion! if job.repeats_on_complete?
       end
     end
   end
