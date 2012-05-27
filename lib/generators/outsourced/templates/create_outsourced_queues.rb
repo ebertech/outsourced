@@ -3,6 +3,7 @@ class CreateOutsourcedQueues < ActiveRecord::Migration
     create_table :outsourced_queues do |t|
       t.string :name
       t.integer :capacity
+      t.timestamps
     end
 
     add_index :outsourced_queues, :name, :unique => true

@@ -49,6 +49,10 @@ module Outsourced
 
     validate :expires_after_runs, :gets_stuck_after_runs, :expires_after_gets_stuck, :fail_repeat_after_runs, :complete_repeat_after_runs
 
+    attr_accessor :has_payload
+
+    has_many :outsourced_exceptions, :class_name => "::Outsourced::Exception", :foreign_key => :outsourced_job_id, :dependent => :destroy
+
     def expires_after_runs
       if expires_at && runs_at && expires_at <= runs_at
         errors.add(:expires_at, "can't be before runs_at")
@@ -108,19 +112,9 @@ module Outsourced
       }.to_json
     end
 
-    attr_accessor :has_payload
-    attr_accessor :backtrace
-    attr_accessor :exception
-
-    before_validation :check_for_error
-
-    def check_for_error
-      if backtrace.present? && exception.present?
-        logger.info "Got exception: #{exception}"
-        logger.info "Backtrace: #{backtrace}"
-        self.exception = self.backtrace = nil
-        work_failed
-      end
+    def exception_attributes=(exception_hash)
+      ::Outsourced::Exception.from_hash!(exception_hash.merge(:outsourced_job => self))
+      work_failed!
     end
 
     def queue=(queue_name)

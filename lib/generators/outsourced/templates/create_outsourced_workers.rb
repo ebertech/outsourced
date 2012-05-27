@@ -4,6 +4,7 @@ class CreateOutsourcedWorkers < ActiveRecord::Migration
       t.string  :name
       t.datetime :last_connected_at
       t.string :state
+      t.timestamps
     end
   end
 end
